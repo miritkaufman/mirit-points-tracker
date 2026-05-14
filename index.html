@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>מחשבון נקודות פלוס</title>
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1046/1046857.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        :root {
+            --apple-blue: #007AFF;
+            --apple-bg: #F2F2F7;
+            --apple-card: #FFFFFF;
+            --apple-green: #34C759;
+            --apple-red: #FF3B30;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--apple-bg);
+            margin: 0; padding: 20px; color: #1C1C1E; padding-bottom: 120px;
+        }
+        .header { text-align: center; margin-bottom: 20px; padding-top: 20px; }
+        .summary-card {
+            background: var(--apple-card); border-radius: 20px; padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; margin-bottom: 20px;
+        }
+        .points-big { font-size: 48px; font-weight: 700; color: var(--apple-blue); margin: 10px 0; }
+        .label { font-size: 14px; color: #8E8E93; text-transform: uppercase; }
+
+        .admin-section { background: #e9e9eb; border-radius: 15px; padding: 15px; margin-bottom: 20px; }
+        .admin-section h3 { margin-top: 0; font-size: 16px; display: flex; justify-content: space-between; align-items: center;}
+        .sync-status { font-size: 12px; color: #8E8E93; font-weight: normal; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        input { padding: 10px; border-radius: 8px; border: 1px solid #C7C7CC; font-size: 14px; flex: 1; box-sizing: border-box; }
+        .add-to-db-btn { background: var(--apple-green); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; width: 100%; cursor: pointer; }
+
+        .food-list { background: var(--apple-card); border-radius: 20px; padding: 0; list-style: none; overflow: hidden; }
+        
+        .food-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #F2F2F7; }
+        .food-item:last-child { border-bottom: none; }
+        .food-info { display: flex; flex-direction: column; flex: 1; }
+        .food-name { font-weight: 600; font-size: 16px; }
+        .food-meta { font-size: 13px; color: #8E8E93; margin-top: 8px; display: flex; align-items: center; gap: 10px; }
+        
+        .food-actions { display: flex; align-items: center; gap: 12px; }
+        .food-pts { font-weight: 700; color: var(--apple-blue); font-size: 16px; min-width: 45px; text-align: left; }
+        .action-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 0; opacity: 0.7; transition: opacity 0.2s; }
+        .action-btn:hover { opacity: 1; }
+
+        .qty-btn {
+            background: #E5E5EA; border: none; border-radius: 50%;
+            width: 28px; height: 28px; font-size: 18px; font-weight: 500;
+            color: var(--apple-blue); cursor: pointer;
+            display: inline-flex; justify-content: center; align-items: center;
+        }
+        .qty-btn:active { background: #D1D1D6; }
+        .qty-display { font-weight: bold; font-size: 15px; min-width: 15px; text-align: center; color: #1C1C1E;}
+
+        .add-btn {
+            background-color: var(--apple-blue); color: white; border: none; border-radius: 50%;
+            width: 65px; height: 65px; font-size: 30px; box-shadow: 0 4px 10px rgba(0,122,255,0.3);
+            position: fixed; bottom: 30px; left: 30px; z-index: 100; cursor: pointer;
+        }
+
+        #modal, #editModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 320px; }
+        .search-box { width: 100%; margin-bottom: 10px; }
+        .options-container { max-height: 150px; overflow-y: auto; border: 1px solid #D1D1D6; border-radius: 10px; margin-bottom: 15px; }
+        .option-item { padding: 12px; border-bottom: 1px solid #F2F2F7; cursor: pointer; }
+        .option-item.selected { background: #E5F1FF; color: var(--apple-blue); font-weight: bold; }
+        .qty-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        .qty-row input { width: 60px; text-align: center; font-weight: bold; font-size: 16px; margin: 0; }
+        .submit-btn { background: var(--apple-blue); color: white; border: none; font-weight: 600; width: 100%; padding: 12px; border-radius: 10px; font-size: 16px; cursor: pointer; }
+        
+        /* עיצוב המקלדת הנומרית המותאמת */
+        .keypad-display { font-size: 36px; text-align: center; font-weight: bold; color: var(--apple-blue); padding: 10px; border: 1px solid #D1D1D6; border-radius: 10px; margin-bottom: 15px; min-height: 43px; }
+        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .key-btn { background: #F2F2F7; border: none; border-radius: 10px; font-size: 24px; padding: 15px; font-weight: 500; color: #1C1C1E; cursor: pointer; }
+        .key-btn:active { background: #D1D1D6; }
+        .key-action-row { display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>היומן שלי</h1>
+    </div>
+
+    <div class="summary-card">
+        <div class="label">נקודות שנותרו</div>
+        <div id="remainingPoints" class="points-big">30</div>
+        <div id="usedLabel" class="label">נוצלו היום: 0</div>
+    </div>
+
+    <div class="admin-section">
+        <h3>הוספת מאכל חדש <span id="syncStatus" class="sync-status">נטען מהענן...</span></h3>
+        <div class="input-group">
+            <input type="text" id="newName" placeholder="שם (למשל: פסטה)">
+            <input type="number" id="newPts" placeholder="נק'">
+        </div>
+        <button class="add-to-db-btn" onclick="addNewFoodToDatabase()">שמור בענן</button>
+    </div>
+
+    <h3 style="margin-right: 10px;">מה אכלתי היום:</h3>
+    <ul class="food-list" id="logList"></ul>
+
+    <button class="add-btn" onclick="openModal()">+</button>
+
+    <!-- מודל בחירת מאכל והוספה ליומן -->
+    <div id="modal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0;">בחירת מאכל</h3>
+            <input type="text" id="searchInput" class="search-box" placeholder="חיפוש..." oninput="filterOptions()">
+            <div id="optionsList" class="options-container"></div>
+            
+            <div class="qty-row">
+                <span>מנות:</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" class="qty-btn" onclick="changeModalQty(-1)">-</button>
+                    <input type="number" id="foodQty" value="1" min="0" step="any">
+                    <button type="button" class="qty-btn" onclick="changeModalQty(1)">+</button>
+                </div>
+            </div>
+
+            <button class="submit-btn" onclick="addFoodToLog()">הוסף ליומן</button>
+            <button style="background:none; border:none; color:red; width:100%; margin-top:15px; font-size:16px;" onclick="closeModal()">ביטול</button>
+        </div>
+    </div>
+
+    <!-- מודל המקלדת המותאמת אישית לעריכת כמות -->
+    <div id="editModal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; text-align: center;" id="editFoodTitle">עריכת כמות</h3>
+            <div class="keypad-display" id="keypadDisplay">1</div>
+            
+            <div class="keypad-grid">
+                <button class="key-btn" onclick="keypadPress('1')">1</button>
+                <button class="key-btn" onclick="keypadPress('2')">2</button>
+                <button class="key-btn" onclick="keypadPress('3')">3</button>
+                <button class="key-btn" onclick="keypadPress('4')">4</button>
+                <button class="key-btn" onclick="keypadPress('5')">5</button>
+                <button class="key-btn" onclick="keypadPress('6')">6</button>
+                <button class="key-btn" onclick="keypadPress('7')">7</button>
+                <button class="key-btn" onclick="keypadPress('8')">8</button>
+                <button class="key-btn" onclick="keypadPress('9')">9</button>
+                <button class="key-btn" onclick="keypadPress('.')">.</button>
+                <button class="key-btn" onclick="keypadPress('0')">0</button>
+                <button class="key-btn" onclick="keypadBackspace()">⌫</button>
+            </div>
+
+            <div class="key-action-row">
+                <button class="submit-btn" style="background: var(--apple-green);" onclick="saveEditedQty()">שמור</button>
+                <button class="submit-btn" style="background: var(--apple-red);" onclick="closeEditModal()">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHdjHG_RIBfaLeLFCcNiEbsxfN0wY_8WT5lcGifEF6OKNXDkr8vifqaovR7786PMc7/exec';
+
+        let dailyTarget = 26;
+        let usedPoints = 0;
+        let selectedFoodIndex = -1;
+        
+        let foodDatabase = JSON.parse(localStorage.getItem('foodDatabase')) || [];
+
+        // משתנים עבור המקלדת המותאמת
+        let editingItemId = null;
+        let keypadValue = "";
+
+        // פונקציה למיון מאגר המאכלים לפי הא'-ב'
+        function sortFoodDatabase() {
+            foodDatabase.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+        }
+
+        window.onload = () => {
+            sortFoodDatabase();
+            loadDailyLog();
+            if (GOOGLE_SCRIPT_URL) {
+                fetchDatabaseFromCloud();
+            } else {
+                document.getElementById('syncStatus').innerText = 'לינק לא מוגדר';
+            }
+        };
+
+        async function fetchDatabaseFromCloud() {
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const result = await response.json();
+                if (result.foods && result.foods.length > 0) {
+                    foodDatabase = result.foods;
+                    sortFoodDatabase(); // מיון לאחר משיכה מהענן
+                    localStorage.setItem('foodDatabase', JSON.stringify(foodDatabase));
+                    document.getElementById('syncStatus').innerText = 'מחובר ומעודכן ✓';
+                }
+            } catch (error) {
+                console.error("שגיאה בסנכרון:", error);
+                document.getElementById('syncStatus').innerText = 'פועל במצב לא מקוון';
+            }
+        }
+
+        async function addNewFoodToDatabase() {
+            const name = document.getElementById('newName').value;
+            const pts = parseFloat(document.getElementById('newPts').value);
+            if (!name || isNaN(pts)) { alert("נא להזין שם ומספר נקודות"); return; }
+
+            foodDatabase.push({name, pts});
+            sortFoodDatabase(); // מיון לאחר הוספת מאכל חדש
+            localStorage.setItem('foodDatabase', JSON.stringify(foodDatabase));
+            
+            document.getElementById('newName').value = '';
+            document.getElementById('newPts').value = '';
+            document.getElementById('syncStatus').innerText = 'מסנכרן...';
+
+            if(GOOGLE_SCRIPT_URL) {
+                try {
+                    const url = `${GOOGLE_SCRIPT_URL}?action=add&name=${encodeURIComponent(name)}&pts=${pts}`;
+                    await fetch(url);
+                    document.getElementById('syncStatus').innerText = 'נשמר בענן ✓';
+                    fetchDatabaseFromCloud();
+                } catch (error) {
+                    document.getElementById('syncStatus').innerText = 'שגיאת סנכרון ✕';
+                }
+            }
+        }
+
+        function openModal() { 
+            document.getElementById('modal').style.display = 'flex'; 
+            document.getElementById('searchInput').value = '';
+            document.getElementById('foodQty').value = '1';
+            selectedFoodIndex = -1;
+            filterOptions(); 
+        }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+        function filterOptions() {
+            const searchText = document.getElementById('searchInput').value;
+            const container = document.getElementById('optionsList');
+            container.innerHTML = '';
+            
+            foodDatabase.forEach((food, index) => {
+                if (food.name.includes(searchText)) {
+                    const div = document.createElement('div');
+                    div.className = 'option-item';
+                    div.innerText = `${food.name} (${food.pts} נק')`;
+                    if (index === selectedFoodIndex) div.classList.add('selected');
+                    div.onclick = () => { selectedFoodIndex = index; filterOptions(); };
+                    container.appendChild(div);
+                }
+            });
+        }
+
+        function changeModalQty(delta) {
+            const input = document.getElementById('foodQty');
+            let current = parseFloat(input.value) || 1; 
+            let newVal = current + delta; 
+            if (newVal > 0) {
+                input.value = newVal;
+            }
+        }
+
+        function addFoodToLog() {
+            if (selectedFoodIndex === -1) { alert("אנא בחרי מאכל מהרשימה"); return; }
+            
+            const food = foodDatabase[selectedFoodIndex];
+            const qty = parseFloat(document.getElementById('foodQty').value) || 1; 
+            const totalPts = Math.round((food.pts * qty) * 100) / 100;
+            
+            const itemData = {
+                id: Date.now(),
+                name: food.name,
+                basePts: food.pts,
+                qty: qty,
+                totalPts: totalPts,
+                date: new Date().toLocaleDateString()
+            };
+            
+            saveItemToLog(itemData);
+            loadDailyLog();
+            closeModal();
+        }
+
+        function saveItemToLog(item) {
+            const log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
+            log.push(item);
+            localStorage.setItem('dailyLog', JSON.stringify(log));
+        }
+
+        function changeLogItemQty(id, delta) {
+            let log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
+            const itemIndex = log.findIndex(item => item.id === id);
+            
+            if (itemIndex > -1) {
+                const item = log[itemIndex];
+                let newQty = item.qty + delta; 
+                
+                if (newQty > 0) {
+                    item.qty = Math.round(newQty * 100) / 100;
+                    item.totalPts = Math.round((item.basePts * item.qty) * 100) / 100;
+                    localStorage.setItem('dailyLog', JSON.stringify(log));
+                    loadDailyLog();
+                }
+            }
+        }
+
+        /* ----- פונקציות המקלדת המותאמת (עריכה) ----- */
+        function editLogItem(id) {
+            let log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
+            const item = log.find(i => i.id === id);
+            
+            if (item) {
+                editingItemId = id;
+                keypadValue = item.qty.toString();
+                document.getElementById('editFoodTitle').innerText = item.name;
+                updateKeypadDisplay();
+                document.getElementById('editModal').style.display = 'flex';
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            editingItemId = null;
+        }
+
+        function updateKeypadDisplay() {
+            document.getElementById('keypadDisplay').innerText = keypadValue === "" ? "0" : keypadValue;
+        }
+
+        function keypadPress(val) {
+            if (val === '.' && keypadValue.includes('.')) return; 
+            
+            if (keypadValue === '0' && val !== '.') {
+                keypadValue = val;
+            } else {
+                if (keypadValue === "" && val === ".") {
+                    keypadValue = "0.";
+                } else {
+                    keypadValue += val;
+                }
+            }
+            updateKeypadDisplay();
+        }
+
+        function keypadBackspace() {
+            keypadValue = keypadValue.slice(0, -1);
+            updateKeypadDisplay();
+        }
+
+        function saveEditedQty() {
+            const newQty = parseFloat(keypadValue);
+            if (isNaN(newQty) || newQty <= 0) {
+                alert("הוזנה כמות לא תקינה");
+                return;
+            }
+
+            let log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
+            const itemIndex = log.findIndex(item => item.id === editingItemId);
+            
+            if (itemIndex > -1) {
+                const item = log[itemIndex];
+                item.qty = newQty;
+                item.totalPts = Math.round((item.basePts * newQty) * 100) / 100;
+                localStorage.setItem('dailyLog', JSON.stringify(log));
+                loadDailyLog();
+                closeEditModal();
+            }
+        }
+        /* ------------------------------------------- */
+
+        function deleteLogItem(id) {
+            if (confirm("האם למחוק מאכל זה מהיומן?")) {
+                let log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
+                log = log.filter(item => item.id !== id);
+                localStorage.setItem('dailyLog', JSON.stringify(log));
+                loadDailyLog();
+            }
+        }
+
+        function renderLogItem(item) {
+            const list = document.getElementById('logList');
+            const li = document.createElement('li');
+            li.className = 'food-item';
+            
+            li.innerHTML = `
+                <div class="food-info">
+                    <div class="food-name">${item.name}</div>
+                    <div class="food-meta">
+                        כמות:
+                        <button class="qty-btn" onclick="changeLogItemQty(${item.id}, -1)">-</button>
+                        <span class="qty-display">${item.qty}</span>
+                        <button class="qty-btn" onclick="changeLogItemQty(${item.id}, 1)">+</button>
+                    </div>
+                </div>
+                <div class="food-actions">
+                    <button class="action-btn" onclick="editLogItem(${item.id})" title="ערוך ידנית">✏️</button>
+                    <button class="action-btn" onclick="deleteLogItem(${item.id})" title="מחק">🗑️</button>
+                    <div class="food-pts">${item.totalPts}</div>
+                </div>
+            `;
+            list.prepend(li);
+        }
+
+        function updateDisplay() {
+            const roundedUsed = Math.round(usedPoints * 100) / 100;
+            const roundedRemaining = Math.round((dailyTarget - usedPoints) * 100) / 100;
+            document.getElementById('remainingPoints').innerText = roundedRemaining;
+            document.getElementById('usedLabel').innerText = `נוצלו היום: ${roundedUsed}`;
+        }
+
+        function loadDailyLog() {
+            document.getElementById('logList').innerHTML = ''; 
+            usedPoints = 0;
+            
+            const today = new Date().toLocaleDateString();
+            const log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
+            const todaysEntries = log.filter(item => item.date === today);
+            
+            todaysEntries.forEach(item => {
+                renderLogItem(item);
+                usedPoints += item.totalPts;
+            });
+            
+            updateDisplay();
+        }
+    </script>
+</body>
+</html>
