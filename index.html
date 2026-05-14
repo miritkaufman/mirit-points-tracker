@@ -31,8 +31,13 @@
         .admin-section { background: #e9e9eb; border-radius: 15px; padding: 15px; margin-bottom: 20px; }
         .admin-section h3 { margin-top: 0; font-size: 16px; display: flex; justify-content: space-between; align-items: center;}
         .sync-status { font-size: 12px; color: #8E8E93; font-weight: normal; }
+        
+        /* תיקון שדות הקלט */
         .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
-        input { padding: 10px; border-radius: 8px; border: 1px solid #C7C7CC; font-size: 14px; flex: 1; box-sizing: border-box; }
+        input { padding: 10px; border-radius: 8px; border: 1px solid #C7C7CC; font-size: 14px; box-sizing: border-box; min-width: 0; }
+        #newName { flex: 2; } /* שדה השם מקבל כפול מקום */
+        #newPts { flex: 1; }  /* שדה הנקודות קטן יותר */
+        
         .add-to-db-btn { background: var(--apple-green); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; width: 100%; cursor: pointer; }
 
         .food-list { background: var(--apple-card); border-radius: 20px; padding: 0; list-style: none; overflow: hidden; }
@@ -159,17 +164,15 @@
     <script>
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHdjHG_RIBfaLeLFCcNiEbsxfN0wY_8WT5lcGifEF6OKNXDkr8vifqaovR7786PMc7/exec';
 
-        let dailyTarget = 26;
+        let dailyTarget = 30;
         let usedPoints = 0;
         let selectedFoodIndex = -1;
         
         let foodDatabase = JSON.parse(localStorage.getItem('foodDatabase')) || [];
 
-        // משתנים עבור המקלדת המותאמת
         let editingItemId = null;
         let keypadValue = "";
 
-        // פונקציה למיון מאגר המאכלים לפי הא'-ב'
         function sortFoodDatabase() {
             foodDatabase.sort((a, b) => a.name.localeCompare(b.name, 'he'));
         }
@@ -190,7 +193,7 @@
                 const result = await response.json();
                 if (result.foods && result.foods.length > 0) {
                     foodDatabase = result.foods;
-                    sortFoodDatabase(); // מיון לאחר משיכה מהענן
+                    sortFoodDatabase();
                     localStorage.setItem('foodDatabase', JSON.stringify(foodDatabase));
                     document.getElementById('syncStatus').innerText = 'מחובר ומעודכן ✓';
                 }
@@ -206,7 +209,7 @@
             if (!name || isNaN(pts)) { alert("נא להזין שם ומספר נקודות"); return; }
 
             foodDatabase.push({name, pts});
-            sortFoodDatabase(); // מיון לאחר הוספת מאכל חדש
+            sortFoodDatabase();
             localStorage.setItem('foodDatabase', JSON.stringify(foodDatabase));
             
             document.getElementById('newName').value = '';
