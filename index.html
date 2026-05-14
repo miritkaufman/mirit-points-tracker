@@ -206,7 +206,10 @@
 
         async function fetchDatabaseFromCloud() {
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL);
+                // הוספת חותמת זמן כדי לעקוף את הזיכרון של האייפון ולמשוך תמיד נתונים טריים
+                const noCacheUrl = GOOGLE_SCRIPT_URL + "?t=" + new Date().getTime();
+                
+                const response = await fetch(noCacheUrl);
                 const result = await response.json();
                 if (result.foods && result.foods.length > 0) {
                     foodDatabase = result.foods;
