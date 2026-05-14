@@ -31,12 +31,10 @@
         .admin-section { background: #e9e9eb; border-radius: 15px; padding: 15px; margin-bottom: 20px; }
         .admin-section h3 { margin-top: 0; font-size: 16px; display: flex; justify-content: space-between; align-items: center;}
         .sync-status { font-size: 12px; color: #8E8E93; font-weight: normal; }
-        
-        /* תיקון שדות הקלט */
         .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
         input { padding: 10px; border-radius: 8px; border: 1px solid #C7C7CC; font-size: 14px; box-sizing: border-box; min-width: 0; }
-        #newName { flex: 2; } /* שדה השם מקבל כפול מקום */
-        #newPts { flex: 1; }  /* שדה הנקודות קטן יותר */
+        #newName { flex: 2; } 
+        #newPts { flex: 1; }  
         
         .add-to-db-btn { background: var(--apple-green); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; width: 100%; cursor: pointer; }
 
@@ -94,7 +92,7 @@
 
     <div class="summary-card">
         <div class="label">נקודות שנותרו</div>
-        <div id="remainingPoints" class="points-big">30</div>
+        <div id="remainingPoints" class="points-big">26</div>
         <div id="usedLabel" class="label">נוצלו היום: 0</div>
     </div>
 
@@ -164,7 +162,7 @@
     <script>
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHdjHG_RIBfaLeLFCcNiEbsxfN0wY_8WT5lcGifEF6OKNXDkr8vifqaovR7786PMc7/exec';
 
-        let dailyTarget = 30;
+        let dailyTarget = 26; // היעד עודכן כאן ל-26 נקודות
         let usedPoints = 0;
         let selectedFoodIndex = -1;
         
@@ -186,6 +184,13 @@
                 document.getElementById('syncStatus').innerText = 'לינק לא מוגדר';
             }
         };
+
+        // הוספת האזנה למצב בו חוזרים לאפליקציה מהרקע (כדי לרענן אוטומטית בבוקר)
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === 'visible') {
+                loadDailyLog();
+            }
+        });
 
         async function fetchDatabaseFromCloud() {
             try {
@@ -307,7 +312,7 @@
             }
         }
 
-        /* ----- פונקציות המקלדת המותאמת (עריכה) ----- */
+        /* ----- פונקציות המקלדת המותאמת ----- */
         function editLogItem(id) {
             let log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
             const item = log.find(i => i.id === id);
@@ -332,7 +337,6 @@
 
         function keypadPress(val) {
             if (val === '.' && keypadValue.includes('.')) return; 
-            
             if (keypadValue === '0' && val !== '.') {
                 keypadValue = val;
             } else {
@@ -416,8 +420,15 @@
             usedPoints = 0;
             
             const today = new Date().toLocaleDateString();
-            const log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
+            let log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
+            
+            // סינון - שומרים אך ורק את המאכלים שנאכלו היום
             const todaysEntries = log.filter(item => item.date === today);
+            
+            // מחיקת כל ההיסטוריה הישנה מהזיכרון באופן פיזי
+            if (log.length !== todaysEntries.length) {
+                localStorage.setItem('dailyLog', JSON.stringify(todaysEntries));
+            }
             
             todaysEntries.forEach(item => {
                 renderLogItem(item);
