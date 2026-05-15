@@ -52,7 +52,7 @@
         .action-btn:hover { opacity: 1; }
 
         /* מעקב מים עיצוב */
-        .water-card { background: var(--apple-card); border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: center; }
+        .water-card { background: var(--apple-card); border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; text-align: center; }
         .water-title { font-size: 16px; font-weight: 600; margin-top: 0; margin-bottom: 15px; }
         .water-grid { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
         .water-drop {
@@ -124,14 +124,14 @@
         <div id="usedLabel" class="label">נוצלו היום: 0</div>
     </div>
 
-    <h3 style="margin-right: 10px;">מה אכלתי היום:</h3>
-    <ul class="food-list" id="logList"></ul>
-
     <div class="water-card">
         <div class="water-title">מעקב מים יומי 💦</div>
         <div class="water-grid" id="waterGrid"></div>
         <div class="water-label" id="waterLabel">0 מתוך 8 כוסות</div>
     </div>
+
+    <h3 style="margin-right: 10px;">מה אכלתי היום:</h3>
+    <ul class="food-list" id="logList"></ul>
 
     <div class="admin-section">
         <h3>הוספת מאכל חדש למאגר <span id="syncStatus" class="sync-status">נטען מהענן...</span></h3>
@@ -214,13 +214,11 @@
         
         let foodDatabase = JSON.parse(localStorage.getItem('foodDatabase')) || [];
 
-        // משתנים למקלדת הנומרית
         let keypadTarget = null; 
         let editingItemId = null;
         let keypadValue = "";
         let currentNewFoodQty = 1; 
 
-        // משתני מים - כעת מערך שמייצג כל טיפה בנפרד (8 טיפות)
         const WATER_TARGET = 8;
         let waterDropsState = new Array(WATER_TARGET).fill(false);
 
@@ -231,7 +229,7 @@
         window.onload = () => {
             sortFoodDatabase();
             loadDailyLog();
-            loadWaterLog(); // טעינת המים באתחול
+            loadWaterLog();
             if (GOOGLE_SCRIPT_URL) {
                 fetchDatabaseFromCloud();
             } else {
@@ -242,16 +240,14 @@
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === 'visible') {
                 loadDailyLog();
-                loadWaterLog(); // רענון מים כשחוזרים לאפליקציה בבוקר
+                loadWaterLog();
             }
         });
 
-        // --- לוגיקת מעקב מים (טיפות עצמאיות) ---
+        // לוגיקת מים
         function loadWaterLog() {
             const today = new Date().toLocaleDateString();
             const storedWater = JSON.parse(localStorage.getItem('waterLog') || '{}');
-            
-            // בודק אם הנתונים מהיום והאם הם נשמרו בפורמט החדש של המערך
             if (storedWater.date === today && Array.isArray(storedWater.drops)) {
                 waterDropsState = storedWater.drops;
             } else {
@@ -267,7 +263,6 @@
         }
 
         function toggleWater(index) {
-            // הופך את המצב של הטיפה הספציפית שעליה לחצו
             waterDropsState[index] = !waterDropsState[index];
             saveWaterLog();
             renderWater();
@@ -276,29 +271,23 @@
         function renderWater() {
             const grid = document.getElementById('waterGrid');
             grid.innerHTML = '';
-            
-            let filledCount = 0; // ספירת כמה טיפות מודלקות כרגע סך הכל
-            
+            let filledCount = 0;
             for (let i = 0; i < WATER_TARGET; i++) {
                 const drop = document.createElement('div');
                 drop.className = 'water-drop ' + (waterDropsState[i] ? 'filled' : '');
                 drop.innerText = '💧';
                 drop.onclick = () => toggleWater(i);
                 grid.appendChild(drop);
-                
                 if (waterDropsState[i]) filledCount++;
             }
-            
             let labelText = `${filledCount} מתוך ${WATER_TARGET} כוסות`;
             if (filledCount >= WATER_TARGET) labelText = `כל הכבוד! שתית ${filledCount} כוסות 🎉`;
             document.getElementById('waterLabel').innerText = labelText;
         }
-        // -------------------------
 
         async function fetchDatabaseFromCloud() {
             try {
                 const noCacheUrl = GOOGLE_SCRIPT_URL + "?t=" + new Date().getTime();
-                
                 const response = await fetch(noCacheUrl);
                 const result = await response.json();
                 if (result.foods && result.foods.length > 0) {
@@ -318,10 +307,8 @@
             const satFat = parseFloat(document.getElementById('calcSatFat').value) || 0;
             const sugar = parseFloat(document.getElementById('calcSugar').value) || 0;
             const protein = parseFloat(document.getElementById('calcProtein').value) || 0;
-
             let calculatedPts = (cal * 0.03) + (satFat * 0.27) + (sugar * 0.12) - (protein * 0.1);
             let finalPts = Math.max(0, Math.round(calculatedPts));
-
             document.getElementById('calcResultPts').innerText = finalPts;
             document.getElementById('calcResultDisplay').style.display = 'block';
             document.getElementById('newPts').value = finalPts;
@@ -331,22 +318,17 @@
             const name = document.getElementById('newName').value;
             const pts = parseFloat(document.getElementById('newPts').value);
             if (!name || isNaN(pts)) { alert("נא להזין שם ומספר נקודות"); return; }
-
             foodDatabase.push({name, pts});
             sortFoodDatabase();
             localStorage.setItem('foodDatabase', JSON.stringify(foodDatabase));
-            
             document.getElementById('newName').value = '';
             document.getElementById('newPts').value = '';
-            
             document.getElementById('calcCal').value = '';
             document.getElementById('calcSatFat').value = '';
             document.getElementById('calcSugar').value = '';
             document.getElementById('calcProtein').value = '';
             document.getElementById('calcResultDisplay').style.display = 'none';
-
             document.getElementById('syncStatus').innerText = 'מסנכרן...';
-
             if(GOOGLE_SCRIPT_URL) {
                 try {
                     const url = `${GOOGLE_SCRIPT_URL}?action=add&name=${encodeURIComponent(name)}&pts=${pts}`;
@@ -362,21 +344,17 @@
         function openModal() { 
             document.getElementById('modal').style.display = 'flex'; 
             document.getElementById('searchInput').value = '';
-            
             currentNewFoodQty = 1;
             document.getElementById('newFoodQtyDisplay').innerText = currentNewFoodQty;
-            
             selectedFoodIndex = -1;
             filterOptions(); 
         }
-        
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
         function filterOptions() {
             const searchText = document.getElementById('searchInput').value;
             const container = document.getElementById('optionsList');
             container.innerHTML = '';
-            
             foodDatabase.forEach((food, index) => {
                 if (food.name.includes(searchText)) {
                     const div = document.createElement('div');
@@ -399,11 +377,9 @@
 
         function addFoodToLog() {
             if (selectedFoodIndex === -1) { alert("אנא בחרי מאכל מהרשימה"); return; }
-            
             const food = foodDatabase[selectedFoodIndex];
             const qty = currentNewFoodQty;
             const totalPts = Math.round((food.pts * qty) * 100) / 100;
-            
             const itemData = {
                 id: Date.now(),
                 name: food.name,
@@ -412,7 +388,6 @@
                 totalPts: totalPts,
                 date: new Date().toLocaleDateString()
             };
-            
             saveItemToLog(itemData);
             loadDailyLog();
             closeModal();
@@ -427,11 +402,9 @@
         function changeLogItemQty(id, delta) {
             let log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
             const itemIndex = log.findIndex(item => item.id === id);
-            
             if (itemIndex > -1) {
                 const item = log[itemIndex];
                 let newQty = item.qty + delta; 
-                
                 if (newQty > 0) {
                     item.qty = Math.round(newQty * 100) / 100;
                     item.totalPts = Math.round((item.basePts * item.qty) * 100) / 100;
@@ -444,13 +417,9 @@
         function openKeypadForNewFood() {
             keypadTarget = 'newFood';
             keypadValue = currentNewFoodQty.toString();
-            
             let title = "כמות מנות";
-            if (selectedFoodIndex > -1) {
-                title = foodDatabase[selectedFoodIndex].name;
-            }
+            if (selectedFoodIndex > -1) title = foodDatabase[selectedFoodIndex].name;
             document.getElementById('editFoodTitle').innerText = title;
-            
             updateKeypadDisplay();
             document.getElementById('editModal').style.display = 'flex';
         }
@@ -458,13 +427,11 @@
         function editLogItem(id) {
             let log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
             const item = log.find(i => i.id === id);
-            
             if (item) {
                 keypadTarget = 'editLog';
                 editingItemId = id;
                 keypadValue = item.qty.toString();
                 document.getElementById('editFoodTitle').innerText = item.name;
-                
                 updateKeypadDisplay();
                 document.getElementById('editModal').style.display = 'flex';
             }
@@ -482,14 +449,10 @@
 
         function keypadPress(val) {
             if (val === '.' && keypadValue.includes('.')) return; 
-            if (keypadValue === '0' && val !== '.') {
-                keypadValue = val;
-            } else {
-                if (keypadValue === "" && val === ".") {
-                    keypadValue = "0.";
-                } else {
-                    keypadValue += val;
-                }
+            if (keypadValue === '0' && val !== '.') { keypadValue = val; } 
+            else {
+                if (keypadValue === "" && val === ".") { keypadValue = "0."; } 
+                else { keypadValue += val; }
             }
             updateKeypadDisplay();
         }
@@ -501,11 +464,7 @@
 
         function saveEditedQty() {
             const newQty = parseFloat(keypadValue);
-            if (isNaN(newQty) || newQty <= 0) {
-                alert("הוזנה כמות לא תקינה");
-                return;
-            }
-
+            if (isNaN(newQty) || newQty <= 0) { alert("הוזנה כמות לא תקינה"); return; }
             if (keypadTarget === 'newFood') {
                 currentNewFoodQty = newQty;
                 document.getElementById('newFoodQtyDisplay').innerText = currentNewFoodQty;
@@ -514,7 +473,6 @@
             else if (keypadTarget === 'editLog') {
                 let log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
                 const itemIndex = log.findIndex(item => item.id === editingItemId);
-                
                 if (itemIndex > -1) {
                     const item = log[itemIndex];
                     item.qty = newQty;
@@ -539,7 +497,6 @@
             const list = document.getElementById('logList');
             const li = document.createElement('li');
             li.className = 'food-item';
-            
             li.innerHTML = `
                 <div class="food-info">
                     <div class="food-name">${item.name}</div>
@@ -569,21 +526,16 @@
         function loadDailyLog() {
             document.getElementById('logList').innerHTML = ''; 
             usedPoints = 0;
-            
             const today = new Date().toLocaleDateString();
             let log = JSON.parse(localStorage.getItem('dailyLog') || '[]');
-            
             const todaysEntries = log.filter(item => item.date === today);
-            
             if (log.length !== todaysEntries.length) {
                 localStorage.setItem('dailyLog', JSON.stringify(todaysEntries));
             }
-            
             todaysEntries.forEach(item => {
                 renderLogItem(item);
                 usedPoints += item.totalPts;
             });
-            
             updateDisplay();
         }
     </script>
