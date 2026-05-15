@@ -220,9 +220,9 @@
         let keypadValue = "";
         let currentNewFoodQty = 1; 
 
-        // משתני מים
-        let dailyWater = 0;
+        // משתני מים - כעת מערך שמייצג כל טיפה בנפרד (8 טיפות)
         const WATER_TARGET = 8;
+        let waterDropsState = new Array(WATER_TARGET).fill(false);
 
         function sortFoodDatabase() {
             foodDatabase.sort((a, b) => a.name.localeCompare(b.name, 'he'));
@@ -246,16 +246,16 @@
             }
         });
 
-        // --- לוגיקת מעקב מים ---
+        // --- לוגיקת מעקב מים (טיפות עצמאיות) ---
         function loadWaterLog() {
             const today = new Date().toLocaleDateString();
             const storedWater = JSON.parse(localStorage.getItem('waterLog') || '{}');
             
-            // בודק האם המים השמורים הם מהיום, אם לא - מאפס
-            if (storedWater.date === today) {
-                dailyWater = storedWater.count || 0;
+            // בודק אם הנתונים מהיום והאם הם נשמרו בפורמט החדש של המערך
+            if (storedWater.date === today && Array.isArray(storedWater.drops)) {
+                waterDropsState = storedWater.drops;
             } else {
-                dailyWater = 0;
+                waterDropsState = new Array(WATER_TARGET).fill(false);
                 saveWaterLog();
             }
             renderWater();
@@ -263,16 +263,12 @@
 
         function saveWaterLog() {
             const today = new Date().toLocaleDateString();
-            localStorage.setItem('waterLog', JSON.stringify({ date: today, count: dailyWater }));
+            localStorage.setItem('waterLog', JSON.stringify({ date: today, drops: waterDropsState }));
         }
 
-        function setWater(count) {
-            // אם לוחצים בדיוק על מספר הכוסות הנוכחי - זה מוריד אחד (מאפשר לבטל את הלחיצה האחרונה)
-            if (count === dailyWater) {
-                dailyWater--;
-            } else {
-                dailyWater = count;
-            }
+        function toggleWater(index) {
+            // הופך את המצב של הטיפה הספציפית שעליה לחצו
+            waterDropsState[index] = !waterDropsState[index];
             saveWaterLog();
             renderWater();
         }
@@ -280,16 +276,21 @@
         function renderWater() {
             const grid = document.getElementById('waterGrid');
             grid.innerHTML = '';
-            for (let i = 1; i <= WATER_TARGET; i++) {
+            
+            let filledCount = 0; // ספירת כמה טיפות מודלקות כרגע סך הכל
+            
+            for (let i = 0; i < WATER_TARGET; i++) {
                 const drop = document.createElement('div');
-                drop.className = 'water-drop ' + (i <= dailyWater ? 'filled' : '');
+                drop.className = 'water-drop ' + (waterDropsState[i] ? 'filled' : '');
                 drop.innerText = '💧';
-                drop.onclick = () => setWater(i);
+                drop.onclick = () => toggleWater(i);
                 grid.appendChild(drop);
+                
+                if (waterDropsState[i]) filledCount++;
             }
             
-            let labelText = `${dailyWater} מתוך ${WATER_TARGET} כוסות`;
-            if (dailyWater >= WATER_TARGET) labelText = `כל הכבוד! שתית ${dailyWater} כוסות 🎉`;
+            let labelText = `${filledCount} מתוך ${WATER_TARGET} כוסות`;
+            if (filledCount >= WATER_TARGET) labelText = `כל הכבוד! שתית ${filledCount} כוסות 🎉`;
             document.getElementById('waterLabel').innerText = labelText;
         }
         // -------------------------
@@ -338,7 +339,6 @@
             document.getElementById('newName').value = '';
             document.getElementById('newPts').value = '';
             
-            // איפוס שדות המחשבון התזונתי
             document.getElementById('calcCal').value = '';
             document.getElementById('calcSatFat').value = '';
             document.getElementById('calcSugar').value = '';
