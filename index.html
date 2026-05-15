@@ -91,6 +91,9 @@
         .key-btn { background: #F2F2F7; border: none; border-radius: 10px; font-size: 24px; padding: 15px; font-weight: 500; color: #1C1C1E; cursor: pointer; }
         .key-btn:active { background: #D1D1D6; }
         .key-action-row { display: flex; gap: 10px; }
+
+        /* גריד למחשבון הערכים התזונתיים */
+        .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -105,11 +108,9 @@
         <div id="usedLabel" class="label">נוצלו היום: 0</div>
     </div>
 
-    <!-- אזור יומן האכילה המרכזי -->
     <h3 style="margin-right: 10px;">מה אכלתי היום:</h3>
     <ul class="food-list" id="logList"></ul>
 
-    <!-- אזור הוספת מאכל חדש למאגר הקבוע (ירד לתחתית) -->
     <div class="admin-section">
         <h3>הוספת מאכל חדש למאגר <span id="syncStatus" class="sync-status">נטען מהענן...</span></h3>
         <div class="input-group">
@@ -119,9 +120,22 @@
         <button class="add-to-db-btn" onclick="addNewFoodToDatabase()">שמור בענן</button>
     </div>
 
+    <div class="admin-section" style="margin-top: 20px;">
+        <h3>מחשבון נקודות תזונתי</h3>
+        <div class="calc-grid">
+            <input type="number" id="calcCal" placeholder="קלוריות" min="0" step="any">
+            <input type="number" id="calcSatFat" placeholder="שומן רווי (גרם)" min="0" step="any">
+            <input type="number" id="calcSugar" placeholder="סוכר (גרם)" min="0" step="any">
+            <input type="number" id="calcProtein" placeholder="חלבון (גרם)" min="0" step="any">
+        </div>
+        <button class="submit-btn" style="background: var(--apple-blue);" onclick="calculateNutritionalPoints()">חשב נקודות</button>
+        <div id="calcResultDisplay" style="display: none; text-align: center; margin-top: 15px; font-size: 18px; font-weight: bold;">
+            התוצאה: <span id="calcResultPts" style="color: var(--apple-blue); font-size: 26px;"></span> נק'
+        </div>
+    </div>
+
     <button class="add-btn" onclick="openModal()">+</button>
 
-    <!-- מודל בחירת מאכל והוספה ליומן -->
     <div id="modal">
         <div class="modal-content">
             <h3 style="margin-top: 0;">בחירת מאכל</h3>
@@ -142,7 +156,6 @@
         </div>
     </div>
 
-    <!-- מודל המקלדת המותאמת אישית לעריכת כמות -->
     <div id="editModal">
         <div class="modal-content">
             <h3 style="margin-top: 0; text-align: center;" id="editFoodTitle">עריכת כמות</h3>
@@ -206,7 +219,7 @@
 
         async function fetchDatabaseFromCloud() {
             try {
-                // הוספת חותמת זמן כדי לעקוף את הזיכרון של האייפון ולמשוך תמיד נתונים טריים
+                // טריק למניעת זיכרון מטמון (Cache) מהדפדפן של האייפון
                 const noCacheUrl = GOOGLE_SCRIPT_URL + "?t=" + new Date().getTime();
                 
                 const response = await fetch(noCacheUrl);
@@ -221,6 +234,27 @@
                 console.error("שגיאה בסנכרון:", error);
                 document.getElementById('syncStatus').innerText = 'פועל במצב לא מקוון';
             }
+        }
+
+        // מחשבון ערכים תזונתיים
+        function calculateNutritionalPoints() {
+            const cal = parseFloat(document.getElementById('calcCal').value) || 0;
+            const satFat = parseFloat(document.getElementById('calcSatFat').value) || 0;
+            const sugar = parseFloat(document.getElementById('calcSugar').value) || 0;
+            const protein = parseFloat(document.getElementById('calcProtein').value) || 0;
+
+            // הנוסחה: קלוריות*0.03 + שומן רווי*0.27 + סוכר*0.12 - חלבון*0.1
+            let calculatedPts = (cal * 0.03) + (satFat * 0.27) + (sugar * 0.12) - (protein * 0.1);
+            
+            // מניעת נקודות שליליות ועיגול למספר שלם
+            let finalPts = Math.max(0, Math.round(calculatedPts));
+
+            // הצגת התוצאה למסך
+            document.getElementById('calcResultPts').innerText = finalPts;
+            document.getElementById('calcResultDisplay').style.display = 'block';
+
+            // הזנה אוטומטית לשדה הנקודות למעלה
+            document.getElementById('newPts').value = finalPts;
         }
 
         async function addNewFoodToDatabase() {
