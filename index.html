@@ -58,7 +58,6 @@
         .history-trigger-btn { background: #E5E5EA; border: none; border-radius: 8px; padding: 6px 10px; font-size: 14px; cursor: pointer; color: #1C1C1E; font-weight: 500; }
         .history-trigger-btn:active { background: #D1D1D6; }
         
-        /* גריד קבוע של 2 שורות כפול 5 עמודות */
         .water-grid { 
             display: grid; 
             grid-template-columns: repeat(5, 1fr); 
@@ -372,8 +371,12 @@
             const satFat = parseFloat(document.getElementById('calcSatFat').value) || 0;
             const sugar = parseFloat(document.getElementById('calcSugar').value) || 0;
             const protein = parseFloat(document.getElementById('calcProtein').value) || 0;
+            
             let calculatedPts = (cal * 0.03) + (satFat * 0.27) + (sugar * 0.12) - (protein * 0.1);
-            let finalPts = Math.max(0, Math.round(calculatedPts));
+            
+            // עיגול לחצי הקרוב ביותר (למשל 2.3 הופך ל-2.5, ו-2.2 הופך ל-2)
+            let finalPts = Math.max(0, Math.round(calculatedPts * 2) / 2);
+
             document.getElementById('calcResultPts').innerText = finalPts;
             document.getElementById('calcResultDisplay').style.display = 'block';
             document.getElementById('newPts').value = finalPts;
