@@ -101,14 +101,12 @@
         
         .submit-btn { background: var(--apple-blue); color: white; border: none; font-weight: 600; width: 100%; padding: 12px; border-radius: 10px; font-size: 16px; cursor: pointer; }
         
-        /* עיצוב המקלדת הנומרית המותאמת */
         .keypad-display { font-size: 36px; text-align: center; font-weight: bold; color: var(--apple-blue); padding: 10px; border: 1px solid #D1D1D6; border-radius: 10px; margin-bottom: 15px; min-height: 43px; }
         .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
         .key-btn { background: #F2F2F7; border: none; border-radius: 10px; font-size: 24px; padding: 15px; font-weight: 500; color: #1C1C1E; cursor: pointer; }
         .key-btn:active { background: #D1D1D6; }
         .key-action-row { display: flex; gap: 10px; }
 
-        /* גריד למחשבון הערכים התזונתיים */
         .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     </style>
 </head>
@@ -127,7 +125,7 @@
     <div class="water-card">
         <div class="water-title">מעקב מים יומי 💦</div>
         <div class="water-grid" id="waterGrid"></div>
-        <div class="water-label" id="waterLabel">0 מתוך 8 כוסות</div>
+        <div class="water-label" id="waterLabel">0 מתוך 10 כוסות</div>
     </div>
 
     <h3 style="margin-right: 10px;">מה אכלתי היום:</h3>
@@ -219,7 +217,8 @@
         let keypadValue = "";
         let currentNewFoodQty = 1; 
 
-        const WATER_TARGET = 8;
+        // מעודכן ל-10 כוסות
+        const WATER_TARGET = 10;
         let waterDropsState = new Array(WATER_TARGET).fill(false);
 
         function sortFoodDatabase() {
@@ -248,7 +247,7 @@
         function loadWaterLog() {
             const today = new Date().toLocaleDateString();
             const storedWater = JSON.parse(localStorage.getItem('waterLog') || '{}');
-            if (storedWater.date === today && Array.isArray(storedWater.drops)) {
+            if (storedWater.date === today && Array.isArray(storedWater.drops) && storedWater.drops.length === WATER_TARGET) {
                 waterDropsState = storedWater.drops;
             } else {
                 waterDropsState = new Array(WATER_TARGET).fill(false);
